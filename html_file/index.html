@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Задание на чистый html, css, js</title>
+</head>
+<style>
+	#app {
+		height: 100vh;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column;
+		gap: 10%;
+	}
+
+	.backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		justify-content: center;
+		z-index: 2;
+	}
+
+	.popup {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-around;
+		background-color: white;
+		width: 100%;
+		max-width: 500px;
+		padding: 20px;
+		border-radius: 8px;
+	}
+
+	.inputs-block {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	.input {
+		flex-grow: 1;
+	}
+</style>
+
+<body>
+	<div id="app"></div>
+</body>
+<script>
+	// состояние для попапа
+	let isPopupOpen = false;
+
+	// если честно, я не совсем понимаю что обозначает "в js используем querySelector"
+	// в целом требование ТЗ я выполнил двумя строчкками ниже, но вместо чего я должен использовать querySelector я не понимаю
+	// два предположения: либо, вместо getElementById (но зачем? я и так бы пользовался querySelector), либо вместо переменных (что звучит как безумие)
+	const app = document.querySelector('#app');
+
+	// функция для удобства. не реакт, но для такой задачи пару десятков строк кода сэкономит
+	function customCreateElement(tag, className, text) {
+		const element = document.createElement(tag);
+		if (className) {
+			element.className = className;
+		}
+		if (text) {
+			element.textContent = text;
+		}
+		return element
+	}
+
+	// кнопка вызова popup
+	const mainButton = customCreateElement('button', 'main-button', 'вызов popup');
+	mainButton.addEventListener('click', togglePopup)
+	app.append(mainButton);
+
+	// функция открытия/закрытия попапа
+	// решил что не буду создавать скрытый попап в css при монтирвании приложения
+	// понятное дело что это затратнее по ресурсам, но на данный момент я считаю что в большинстве случаев если не видно блока, то в дом дереве его быть не должно (с модалкой уж точно)
+	// отдельные функции для открытия и закрытия тоже не захотелось делать, так как с состоянием смотрится как-то лаконичнее
+	function togglePopup(e) {
+		// создание модального окна в дом дереве
+		if (!isPopupOpen) {
+			document.body.style.overflow = 'hidden';
+			const backdrop = customCreateElement('div', 'backdrop');
+			backdrop.addEventListener('click', togglePopup)
+
+			const popup = customCreateElement('form', 'popup');
+			const title = customCreateElement('h2', 'title', 'Заголовок')
+			const inputsBlock = customCreateElement('div', 'inputs-block');
+			// не захотелось делать циклом, так как требуется отдельный массив с плейсхолдерами, что как мне кажется выглядит по дилетански. допускаю что я не прав
+			const input1 = customCreateElement('input', 'input', '')
+			input1.placeholder = 'инпут 1'
+			const input2 = customCreateElement('input', 'input', '')
+			input2.placeholder = 'инпут 2'
+			const input3 = customCreateElement('input', 'input', '')
+			input3.placeholder = 'инпут 3'
+			const input4 = customCreateElement('input', 'input', '')
+			input4.placeholder = 'инпут 4'
+			const input5 = customCreateElement('input', 'input', '')
+			input5.placeholder = 'инпут 5'
+
+			const submitButton = customCreateElement('button', 'submit-button', 'Отправить')
+			// можно было бы вывести функцию с сабмитом в отдельную функцию вне "компонента" с модалкой
+			// как минимум было бы меньше нагрузки и потенциально модалка открывалась бы быстрее
+			// но! так как это полноценный компонент модакли, то было бы странно если бы эта функция находилась за ее пределами
+			// да и создавать функцию при загрузке приложения которая вне модалки бесполезна также не лучшее решение. на обратной свзяи буду рад узнать правильное решение.
+			submitButton.addEventListener('click', (e) => {
+				e.preventDefault();
+				const dirtyJsonDiv = app.querySelector('.data');
+				if (dirtyJsonDiv) {
+					app.removeChild(dirtyJsonDiv)
+				}
+				const formData = {
+					input1: input1.value,
+					input2: input2.value,
+					input3: input3.value,
+					input4: input4.value,
+					input5: input5.value
+				};
+				const jsonData = JSON.stringify(formData);
+				const jsonDiv = customCreateElement('div', 'data', '')
+				jsonDiv.textContent = jsonData
+				app.append(jsonDiv)
+				togglePopup()
+			})
+			inputsBlock.append(input1, input2, input3, input4, input5)
+			popup.append(title, inputsBlock, submitButton)
+			backdrop.append(popup)
+			app.append(backdrop)
+			isPopupOpen = true
+
+			popup.addEventListener('click', (e) => {
+				e.stopPropagation()
+			})
+		}
+		// демонтаж попапа из дом дерева
+		else {
+			document.body.style.overflow = 'auto';
+			const backdrop = app.querySelector('.backdrop');
+			app.removeChild(backdrop)
+			isPopupOpen = false
+		}
+	}
+</script>
+
+</html>
